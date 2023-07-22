@@ -338,8 +338,6 @@ analyze externAnalysis expr = case expr of
     analyzeDefault expr
   Accessor hd acc ->
     case syntaxOf hd of
-      Just (Accessor _ (GetCtorField qi _ _ _ _ _)) ->
-        analysis <> usedDep qi
       Just (Accessor _ _) ->
         analysis
       Just (Local _ lvl) ->
@@ -350,9 +348,10 @@ analyze externAnalysis expr = case expr of
       _ ->
         complex Deref analysis
     where
-    analysis =
-      withResult Unknown
-        $ analyzeDefault expr
+    analysis = case acc of
+      GetCtorField qi _ _ _ _ _ -> do
+        withResult Unknown $ analyzeDefault expr <> usedDep qi
+      _ -> withResult Unknown $ analyzeDefault expr
   Lit lit ->
     case lit of
       LitArray as | Array.length as > 0 ->
